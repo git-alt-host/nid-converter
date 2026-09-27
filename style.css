@@ -25,7 +25,7 @@ body {
         radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
     color: var(--text-primary);
     min-height: 100vh;
-    overflow: hidden; /* Prevent body scrolling */
+    overflow: hidden;
 }
 
 /* 2-Column Layout */
@@ -37,15 +37,15 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 400px;
-    min-width: 400px;
+    width: 380px;
+    min-width: 380px;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    padding: 2rem;
+    padding: clamp(1rem, 2.5vh, 2rem) 1.25rem;
     overflow-y: auto;
     z-index: 10;
     box-shadow: 10px 0 30px rgba(0,0,0,0.2);
@@ -62,8 +62,14 @@ body {
 header {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    justify-content: space-between;
+    margin-bottom: clamp(1rem, 2.5vh, 2rem);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .logo-box {
@@ -76,25 +82,24 @@ header {
 
 header h1 {
     font-weight: 600;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     letter-spacing: -0.02em;
 }
 
 header p {
     color: var(--text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 /* Drop Zone */
 .drop-zone {
     border: 2px dashed var(--border-color);
-    border-radius: 16px;
-    padding: 2rem 1.5rem;
-    text-align: center;
+    border-radius: 10px;
+    padding: clamp(0.75rem, 3vh, 1.5rem) 1rem;
     cursor: pointer;
     transition: all 0.3s ease;
     background: rgba(255, 255, 255, 0.02);
-    margin-bottom: 1.5rem;
+    margin-bottom: clamp(0.75rem, 2vh, 1.5rem);
 }
 
 .drop-zone:hover, .drop-zone.dragover {
@@ -102,19 +107,28 @@ header p {
     background: rgba(59, 130, 246, 0.05);
 }
 
+.drop-zone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
 .upload-icon {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     color: var(--accent-blue);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .drop-zone p {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
 }
 
 .drop-zone span {
+    display: block;
     color: var(--text-secondary);
     font-size: 0.8rem;
 }
@@ -123,21 +137,21 @@ header p {
 .controls-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: clamp(0.75rem, 2vh, 1.5rem);
 }
 
 .card-controls {
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 1.25rem;
+    border-radius: 12px;
+    padding: clamp(0.75rem, 2.5vh, 1.5rem) 1.25rem;
 }
 
 .controls-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
 }
 
 .indicator {
@@ -149,7 +163,7 @@ header p {
 .indicator.purple { background: var(--accent-purple); box-shadow: 0 0 10px var(--accent-purple); }
 
 .controls-header h3 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: #e2e8f0;
 }
@@ -159,16 +173,16 @@ header p {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding: 0 0.5rem;
+    margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+    padding: 0 0.25rem;
 }
 
 .pad-label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-secondary);
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -195,6 +209,7 @@ header p {
     justify-content: center;
     transition: all 0.2s;
     user-select: none;
+    touch-action: none;
 }
 
 .d-btn:hover, .d-btn:active {
@@ -221,14 +236,14 @@ header p {
 .size-section {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: clamp(0.4rem, 1vh, 0.75rem);
 }
 
 .size-group span {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-secondary);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -236,7 +251,7 @@ header p {
 .btn-group {
     display: flex;
     background: var(--bg-surface);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
     overflow: hidden;
 }
@@ -250,6 +265,8 @@ header p {
     cursor: pointer;
     font-size: 1rem;
     transition: background 0.2s;
+    touch-action: none;
+    user-select: none;
 }
 
 .s-btn:hover { background: rgba(255,255,255,0.1); }
@@ -260,17 +277,17 @@ header p {
 .compact-inputs {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    padding-top: 1rem;
+    gap: 0.25rem;
+    padding-top: clamp(0.5rem, 1.5vh, 1rem);
     border-top: 1px solid rgba(255,255,255,0.05);
 }
 
 .compact-inputs label {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-secondary);
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 .compact-inputs input {
@@ -278,10 +295,10 @@ header p {
     background: var(--bg-surface);
     border: 1px solid transparent;
     color: white;
-    padding: 0.3rem;
+    padding: clamp(0.1rem, 1vh, 0.2rem);
     border-radius: 4px;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: clamp(0.65rem, 1.5vh, 0.75rem);
     outline: none;
     transition: all 0.2s;
     text-align: center;
@@ -292,40 +309,31 @@ header p {
     background: var(--bg-surface-hover);
 }
 
-/* Action Panel */
-.action-panel {
-    margin-top: auto;
-    padding-top: 1rem;
+/* Header Actions */
+.header-actions {
+    display: flex;
+    align-items: center;
 }
 
-.primary-btn {
-    width: 100%;
+.header-dl-btn {
     background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
     color: white;
     border: none;
-    padding: 1rem;
-    font-size: 1.05rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.5rem;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
-.primary-btn:hover {
+.header-dl-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-}
-
-.size-info {
-    text-align: center;
-    margin-top: 0.75rem;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
 }
 
 /* Main Preview Area */
@@ -383,7 +391,7 @@ header p {
 }
 
 #preview-canvas {
-    max-height: calc(100vh - 6rem);
+    max-height: calc(100vh - 4rem);
     width: auto;
     object-fit: contain;
     border-radius: 4px;
@@ -397,23 +405,45 @@ header p {
 /* Loader */
 .processing-status {
     text-align: center;
-    padding: 2rem;
+    padding: 1rem;
     background: rgba(0,0,0,0.2);
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
 }
 
 .loader {
     border: 3px solid rgba(255,255,255,0.1);
     border-top: 3px solid var(--accent-blue);
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
+    margin: 0 auto 0.5rem;
 }
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Responsive Height Adjustments for Small Screens */
+@media (max-height: 700px) {
+    .drop-zone {
+        padding: clamp(0.4rem, 1.5vh, 0.75rem) 1rem;
+    }
+    .drop-zone-content {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    .drop-zone span {
+        display: none;
+    }
+    .upload-icon {
+        width: 18px;
+        height: 18px;
+        margin-bottom: 0;
+    }
+    .drop-zone p {
+        font-size: 0.85rem;
+    }
 }

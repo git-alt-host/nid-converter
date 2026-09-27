@@ -18,10 +18,18 @@
         <!-- Sidebar Controls -->
         <aside class="sidebar">
             <header>
-                <div class="logo-box"></div>
-                <div>
-                    <h1>NID Studio</h1>
-                    <p>Pro A4 Conversion</p>
+                <div class="brand">
+                    <div class="logo-box"></div>
+                    <div>
+                        <h1>NID Studio</h1>
+                        <p id="size-info">Pro A4 Conversion</p>
+                    </div>
+                </div>
+                <div class="header-actions" id="action-panel" style="display: none;">
+                    <button id="download-btn" class="header-dl-btn" title="Download A4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Save
+                    </button>
                 </div>
             </header>
 
@@ -55,11 +63,11 @@
                         <div class="d-pad-section">
                             <span class="pad-label">Position</span>
                             <div class="d-pad">
-                                <button class="d-btn up" onclick="adjustValue('front-y', -0.1)" title="Move Up">▲</button>
-                                <button class="d-btn left" onclick="adjustValue('front-x', -0.1)" title="Move Left">◄</button>
+                                <button class="d-btn up" onpointerdown="startAdjusting('front-y', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Up">▲</button>
+                                <button class="d-btn left" onpointerdown="startAdjusting('front-x', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Left">◄</button>
                                 <div class="d-btn center"></div>
-                                <button class="d-btn right" onclick="adjustValue('front-x', 0.1)" title="Move Right">►</button>
-                                <button class="d-btn down" onclick="adjustValue('front-y', 0.1)" title="Move Down">▼</button>
+                                <button class="d-btn right" onpointerdown="startAdjusting('front-x', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Right">►</button>
+                                <button class="d-btn down" onpointerdown="startAdjusting('front-y', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Down">▼</button>
                             </div>
                         </div>
 
@@ -68,15 +76,15 @@
                             <div class="size-group">
                                 <span>Width</span>
                                 <div class="btn-group">
-                                    <button class="s-btn" onclick="adjustValue('front-w', -0.1)">-</button>
-                                    <button class="s-btn" onclick="adjustValue('front-w', 0.1)">+</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('front-w', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">-</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('front-w', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">+</button>
                                 </div>
                             </div>
                             <div class="size-group">
                                 <span>Height</span>
                                 <div class="btn-group">
-                                    <button class="s-btn" onclick="adjustValue('front-h', -0.1)">-</button>
-                                    <button class="s-btn" onclick="adjustValue('front-h', 0.1)">+</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('front-h', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">-</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('front-h', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">+</button>
                                 </div>
                             </div>
                         </div>
@@ -101,11 +109,11 @@
                         <div class="d-pad-section">
                             <span class="pad-label">Position</span>
                             <div class="d-pad">
-                                <button class="d-btn up" onclick="adjustValue('back-y', -0.1)" title="Move Up">▲</button>
-                                <button class="d-btn left" onclick="adjustValue('back-x', -0.1)" title="Move Left">◄</button>
+                                <button class="d-btn up" onpointerdown="startAdjusting('back-y', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Up">▲</button>
+                                <button class="d-btn left" onpointerdown="startAdjusting('back-x', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Left">◄</button>
                                 <div class="d-btn center"></div>
-                                <button class="d-btn right" onclick="adjustValue('back-x', 0.1)" title="Move Right">►</button>
-                                <button class="d-btn down" onclick="adjustValue('back-y', 0.1)" title="Move Down">▼</button>
+                                <button class="d-btn right" onpointerdown="startAdjusting('back-x', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Right">►</button>
+                                <button class="d-btn down" onpointerdown="startAdjusting('back-y', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()" title="Move Down">▼</button>
                             </div>
                         </div>
 
@@ -114,15 +122,15 @@
                             <div class="size-group">
                                 <span>Width</span>
                                 <div class="btn-group">
-                                    <button class="s-btn" onclick="adjustValue('back-w', -0.1)">-</button>
-                                    <button class="s-btn" onclick="adjustValue('back-w', 0.1)">+</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('back-w', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">-</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('back-w', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">+</button>
                                 </div>
                             </div>
                             <div class="size-group">
                                 <span>Height</span>
                                 <div class="btn-group">
-                                    <button class="s-btn" onclick="adjustValue('back-h', -0.1)">-</button>
-                                    <button class="s-btn" onclick="adjustValue('back-h', 0.1)">+</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('back-h', -0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">-</button>
+                                    <button class="s-btn" onpointerdown="startAdjusting('back-h', 0.1)" onpointerup="stopAdjusting()" onpointerleave="stopAdjusting()">+</button>
                                 </div>
                             </div>
                         </div>
@@ -136,13 +144,6 @@
                     </div>
                 </div>
 
-                <div class="action-panel" id="action-panel">
-                    <button id="download-btn" class="primary-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Download A4
-                    </button>
-                    <div class="size-info" id="size-info">Ready</div>
-                </div>
             </div>
         </aside>
 

@@ -74,6 +74,26 @@ window.adjustValue = function(inputId, delta) {
     }
 };
 
+let adjustInterval;
+let adjustTimeout;
+
+window.startAdjusting = function(inputId, delta) {
+    // Fire immediately once
+    window.adjustValue(inputId, delta);
+    
+    // Set timeout to start continuous adjustment
+    adjustTimeout = setTimeout(() => {
+        adjustInterval = setInterval(() => {
+            window.adjustValue(inputId, delta);
+        }, 100); // 10 ticks a second
+    }, 400); // Wait 400ms before repeating
+};
+
+window.stopAdjusting = function() {
+    clearTimeout(adjustTimeout);
+    clearInterval(adjustInterval);
+};
+
 // Update preview when settings change
 let debounceTimer;
 Object.values(settings.front).concat(Object.values(settings.back)).forEach(input => {
@@ -149,7 +169,7 @@ async function processPDF(file) {
         
         previewContainer.style.display = 'flex';
         controlsPanel.style.display = 'flex';
-        actionPanel.style.display = 'block';
+        actionPanel.style.display = 'flex';
         
         await optimizeAndGenerateBlob();
         statusContainer.style.display = 'none';
