@@ -2,14 +2,14 @@ const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 const statusContainer = document.getElementById('status-container');
 const statusText = document.getElementById('status-text');
+const controlsPanel = document.getElementById('controls-panel');
 const actionPanel = document.getElementById('action-panel');
 const downloadBtn = document.getElementById('download-btn');
 const sizeInfo = document.getElementById('size-info');
 const previewContainer = document.getElementById('preview-container');
+const emptyState = document.getElementById('empty-state');
 const previewCanvas = document.getElementById('preview-canvas');
 const renderCanvas = document.getElementById('render-canvas');
-
-// Settings inputs
 const settings = {
     front: {
         x: document.getElementById('front-x'),
@@ -27,6 +27,7 @@ const settings = {
 
 let finalJpegBlob = null;
 let currentPdfFile = null;
+let cachedSourceCanvas = null;
 
 // Drag and drop events
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -60,11 +61,33 @@ fileInput.addEventListener('change', function() {
     handleFiles(this.files);
 });
 
+// Expose adjustValue globally for HTML inline onclick handlers
+window.adjustValue = function(inputId, delta) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        let currentVal = parseFloat(input.value);
+        input.value = (currentVal + delta).toFixed(1);
+        
+        // Dispatch input event to trigger the live preview update
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+    }
+};
+
 // Update preview when settings change
+let debounceTimer;
 Object.values(settings.front).concat(Object.values(settings.back)).forEach(input => {
-    input.addEventListener('change', () => {
-        if (currentPdfFile) {
-            processPDF(currentPdfFile);
+    input.addEventListener('input', () => {
+        if (cachedSourceCanvas) {
+            drawCroppedImages(cachedSourceCanvas);
+            
+            clearTimeout(debounceTimer);
+            sizeInfo.innerText = 'Re-calculating final size...';
+            sizeInfo.style.color = 'var(--text-secondary)';
+            
+            debounceTimer = setTimeout(async () => {
+                await optimizeAndGenerateBlob(true);
+            }, 500);
         }
     });
 });
@@ -86,8 +109,9 @@ async function processPDF(file) {
         // UI Updates
         dropZone.style.display = 'none';
         statusContainer.style.display = 'block';
-        actionPanel.style.display = 'none';
+        controlsPanel.style.display = 'none';
         previewContainer.style.display = 'none';
+        emptyState.style.display = 'none';
         statusText.innerText = 'Reading PDF...';
 
         const arrayBuffer = await file.arrayBuffer();
@@ -117,9 +141,19 @@ async function processPDF(file) {
         };
         await page.render(renderContext).promise;
 
+        cachedSourceCanvas = tempCanvas;
+
         // Process images
         statusText.innerText = 'Processing and Cropping Images...';
-        await generateFinalImage(tempCanvas);
+        drawCroppedImages(cachedSourceCanvas);
+        
+        previewContainer.style.display = 'flex';
+        controlsPanel.style.display = 'flex';
+        actionPanel.style.display = 'block';
+        
+        await optimizeAndGenerateBlob();
+        statusContainer.style.display = 'none';
+        dropZone.style.display = 'block'; // Bring back upload block at top
 
     } catch (error) {
         console.error(error);
@@ -128,7 +162,7 @@ async function processPDF(file) {
     }
 }
 
-async function generateFinalImage(sourceCanvas) {
+function drawCroppedImages(sourceCanvas) {
     // A4 dimensions at 300 DPI
     const A4_WIDTH = 2480;
     const A4_HEIGHT = 3508;
@@ -211,8 +245,17 @@ async function generateFinalImage(sourceCanvas) {
         drawBackX, drawBackY, targetBackWidth, targetBackHeight
     );
 
-    // Generate JPEG with target size (800KB - 1MB)
-    statusText.innerText = 'Optimizing Image Size (Target 800KB - 1MB)...';
+    // Update Preview UI immediately
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCanvas.width = A4_WIDTH / 4;
+    previewCanvas.height = A4_HEIGHT / 4;
+    previewCtx.drawImage(renderCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+}
+
+async function optimizeAndGenerateBlob(quiet = false) {
+    if (!quiet) {
+        statusText.innerText = 'Optimizing Image Size (Target 800KB - 1MB)...';
+    }
     
     // Binary search for quality
     let minQ = 0.1;
@@ -245,17 +288,6 @@ async function generateFinalImage(sourceCanvas) {
     finalJpegBlob = bestBlob;
     const sizeKB = (finalJpegBlob.size / 1024).toFixed(1);
     
-    // Update Preview UI
-    const previewCtx = previewCanvas.getContext('2d');
-    previewCanvas.width = A4_WIDTH / 4;
-    previewCanvas.height = A4_HEIGHT / 4;
-    previewCtx.drawImage(renderCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
-    
-    statusContainer.style.display = 'none';
-    previewContainer.style.display = 'block';
-    actionPanel.style.display = 'block';
-    dropZone.style.display = 'block'; // Allow another upload
-    
     sizeInfo.innerText = `Final Size: ${sizeKB} KB (Quality: ${Math.round(currentQ * 100)}%)`;
     
     if (finalJpegBlob.size < TARGET_MIN || finalJpegBlob.size > TARGET_MAX) {
@@ -281,6 +313,7 @@ downloadBtn.addEventListener('click', () => {
 function resetUI() {
     dropZone.style.display = 'block';
     statusContainer.style.display = 'none';
-    actionPanel.style.display = 'none';
+    controlsPanel.style.display = 'none';
     previewContainer.style.display = 'none';
+    emptyState.style.display = 'flex';
 }
