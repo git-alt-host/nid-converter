@@ -1,8 +1,18 @@
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
+const dropZoneOnline = document.getElementById('drop-zone-online');
+const fileInputOnline = document.getElementById('file-input-online');
+const smartModeUpload = document.getElementById('smart-mode-upload');
+const dropZoneFront = document.getElementById('drop-zone-front');
+const fileInputFront = document.getElementById('file-input-front');
+const dropZoneBack = document.getElementById('drop-zone-back');
+const fileInputBack = document.getElementById('file-input-back');
+
+const tabOnline = document.getElementById('tab-online');
+const tabSmart = document.getElementById('tab-smart');
+
 const statusContainer = document.getElementById('status-container');
 const statusText = document.getElementById('status-text');
 const controlsPanel = document.getElementById('controls-panel');
+const smartControlsPanel = document.getElementById('smart-controls-panel');
 const actionPanel = document.getElementById('action-panel');
 const downloadBtn = document.getElementById('download-btn');
 const sizeInfo = document.getElementById('size-info');
@@ -25,48 +35,107 @@ const settings = {
     }
 };
 
+const smartSettings = {
+    front: {
+        x: document.getElementById('smart-front-x'),
+        y: document.getElementById('smart-front-y'),
+        z: document.getElementById('smart-front-z')
+    },
+    back: {
+        x: document.getElementById('smart-back-x'),
+        y: document.getElementById('smart-back-y'),
+        z: document.getElementById('smart-back-z')
+    }
+};
+
 let finalJpegBlob = null;
 let currentPdfFile = null;
 let cachedSourceCanvas = null;
 
-// Drag and drop events
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, preventDefaults, false);
+let currentMode = 'online';
+let smartFrontImg = null;
+let smartBackImg = null;
+
+// Mode Switching
+tabOnline.addEventListener('click', (e) => {
+    e.preventDefault();
+    currentMode = 'online';
+    tabOnline.classList.add('active');
+    tabSmart.classList.remove('active');
+    
+    dropZoneOnline.style.display = 'block';
+    smartModeUpload.style.display = 'none';
+    resetUI();
 });
+
+tabSmart.addEventListener('click', (e) => {
+    e.preventDefault();
+    currentMode = 'smart';
+    tabSmart.classList.add('active');
+    tabOnline.classList.remove('active');
+    
+    dropZoneOnline.style.display = 'none';
+    smartModeUpload.style.display = 'flex';
+    resetUI();
+});
+
+// Drag and drop events setup for a given zone and input
+function setupDropZone(zone, input, callback) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.remove('dragover'), false);
+    });
+
+    zone.addEventListener('drop', (e) => {
+        let dt = e.dataTransfer;
+        let files = dt.files;
+        callback(files);
+    });
+
+    zone.addEventListener('click', () => {
+        input.click();
+    });
+
+    input.addEventListener('change', function() {
+        callback(this.files);
+    });
+}
+
+setupDropZone(dropZoneOnline, fileInputOnline, handleOnlineFiles);
+setupDropZone(dropZoneFront, fileInputFront, (files) => handleSmartFiles(files, 'front'));
+setupDropZone(dropZoneBack, fileInputBack, (files) => handleSmartFiles(files, 'back'));
 
 function preventDefaults(e) {
     e.preventDefault();
     e.stopPropagation();
 }
 
-['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
-});
-
-['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
-});
-
-dropZone.addEventListener('drop', (e) => {
-    let dt = e.dataTransfer;
-    let files = dt.files;
-    handleFiles(files);
-});
-
-dropZone.addEventListener('click', () => {
-    fileInput.click();
-});
-
-fileInput.addEventListener('change', function() {
-    handleFiles(this.files);
-});
-
 // Expose adjustValue globally for HTML inline onclick handlers
 window.adjustValue = function(inputId, delta) {
     const input = document.getElementById(inputId);
     if (input) {
         let currentVal = parseFloat(input.value);
-        input.value = (currentVal + delta).toFixed(1);
+        let newVal = currentVal + delta;
+        
+        // Determine precision based on the input's step attribute
+        let decimals = 1; // Default
+        if (input.step) {
+            const stepStr = input.step.toString();
+            if (stepStr.includes('.')) {
+                decimals = stepStr.split('.')[1].length;
+            } else {
+                decimals = 0;
+            }
+        }
+        
+        input.value = newVal.toFixed(decimals);
         
         // Dispatch input event to trigger the live preview update
         const event = new Event('input', { bubbles: true });
@@ -98,7 +167,7 @@ window.stopAdjusting = function() {
 let debounceTimer;
 Object.values(settings.front).concat(Object.values(settings.back)).forEach(input => {
     input.addEventListener('input', () => {
-        if (cachedSourceCanvas) {
+        if (cachedSourceCanvas && currentMode === 'online') {
             drawCroppedImages(cachedSourceCanvas);
             
             clearTimeout(debounceTimer);
@@ -112,7 +181,23 @@ Object.values(settings.front).concat(Object.values(settings.back)).forEach(input
     });
 });
 
-function handleFiles(files) {
+Object.values(smartSettings.front).concat(Object.values(smartSettings.back)).forEach(input => {
+    input.addEventListener('input', () => {
+        if (smartFrontImg && smartBackImg && currentMode === 'smart') {
+            drawSmartImages();
+            
+            clearTimeout(debounceTimer);
+            sizeInfo.innerText = 'Re-calculating final size...';
+            sizeInfo.style.color = 'var(--text-secondary)';
+            
+            debounceTimer = setTimeout(async () => {
+                await optimizeAndGenerateBlob(true);
+            }, 500);
+        }
+    });
+});
+
+function handleOnlineFiles(files) {
     if (files.length === 0) return;
     const file = files[0];
     if (file.type !== 'application/pdf') {
@@ -124,10 +209,63 @@ function handleFiles(files) {
     processPDF(file);
 }
 
+function handleSmartFiles(files, type) {
+    if (files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            if (type === 'front') {
+                smartFrontImg = img;
+                document.getElementById('drop-zone-front').classList.add('has-image');
+                document.getElementById('front-label').innerText = 'Front Image Ready';
+            } else {
+                smartBackImg = img;
+                document.getElementById('drop-zone-back').classList.add('has-image');
+                document.getElementById('back-label').innerText = 'Back Image Ready';
+            }
+            checkSmartReady();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function checkSmartReady() {
+    if (smartFrontImg && smartBackImg) {
+        // Both images ready, process them
+        smartModeUpload.style.display = 'none';
+        statusContainer.style.display = 'block';
+        controlsPanel.style.display = 'none';
+        smartControlsPanel.style.display = 'none';
+        previewContainer.style.display = 'none';
+        emptyState.style.display = 'none';
+        statusText.innerText = 'Creating A4 Document...';
+
+        await new Promise(r => setTimeout(r, 100)); // allow UI update
+        
+        drawSmartImages();
+        
+        previewContainer.style.display = 'flex';
+        smartControlsPanel.style.display = 'flex';
+        actionPanel.style.display = 'flex';
+        
+        await optimizeAndGenerateBlob();
+        statusContainer.style.display = 'none';
+        smartModeUpload.style.display = 'flex'; // Bring back
+    }
+}
+
 async function processPDF(file) {
     try {
         // UI Updates
-        dropZone.style.display = 'none';
+        dropZoneOnline.style.display = 'none';
         statusContainer.style.display = 'block';
         controlsPanel.style.display = 'none';
         previewContainer.style.display = 'none';
@@ -173,7 +311,7 @@ async function processPDF(file) {
         
         await optimizeAndGenerateBlob();
         statusContainer.style.display = 'none';
-        dropZone.style.display = 'block'; // Bring back upload block at top
+        dropZoneOnline.style.display = 'block'; // Bring back upload block at top
 
     } catch (error) {
         console.error(error);
@@ -272,6 +410,105 @@ function drawCroppedImages(sourceCanvas) {
     previewCtx.drawImage(renderCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
 }
 
+function drawSmartImages() {
+    // A4 dimensions at 300 DPI
+    const A4_WIDTH = 2480;
+    const A4_HEIGHT = 3508;
+    
+    renderCanvas.width = A4_WIDTH;
+    renderCanvas.height = A4_HEIGHT;
+    const ctx = renderCanvas.getContext('2d');
+    
+    // 1. Canvas as black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, A4_WIDTH, A4_HEIGHT);
+    
+    // 2. New A4 size page full white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, A4_WIDTH, A4_HEIGHT);
+    
+    // Define the precise windows (Top and Bottom)
+    // Standard NID aspect ratio ~ 1.585
+    const windowWidth = A4_WIDTH * 0.88; // Take up 88% of A4 width
+    const windowHeight = windowWidth / 1.585; 
+    
+    const gap = 160; // 2x space between the 2 images
+    const windowX = (A4_WIDTH - windowWidth) / 2;
+    const window1Y = 150; // Top margin
+    const window2Y = window1Y + windowHeight + gap;
+    
+    const cornerRadius = 80; // Curved borders (increased radius)
+    
+    // Helper to draw the curved window, fill it black, and fit the image inside
+    function drawRoundedWindowAndImage(img, wx, wy, ww, wh, radius, settings) {
+        ctx.save();
+        
+        // Create rounded path
+        ctx.beginPath();
+        ctx.moveTo(wx + radius, wy);
+        ctx.lineTo(wx + ww - radius, wy);
+        ctx.quadraticCurveTo(wx + ww, wy, wx + ww, wy + radius);
+        ctx.lineTo(wx + ww, wy + wh - radius);
+        ctx.quadraticCurveTo(wx + ww, wy + wh, wx + ww - radius, wy + wh);
+        ctx.lineTo(wx + radius, wy + wh);
+        ctx.quadraticCurveTo(wx, wy + wh, wx, wy + wh - radius);
+        ctx.lineTo(wx, wy + radius);
+        ctx.quadraticCurveTo(wx, wy, wx + radius, wy);
+        ctx.closePath();
+        
+        // Fill black window background
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+        
+        // Clip to this rounded rectangle so the image gets the same curved borders
+        ctx.clip();
+        
+        // Fit image into window (using 'cover' logic + a small zoom to crop borders)
+        const imgRatio = img.width / img.height;
+        const winRatio = ww / wh;
+        let dw, dh;
+        
+        if (imgRatio > winRatio) {
+            // Image is wider than window: scale height to fit, width overflows
+            dh = wh;
+            dw = wh * imgRatio;
+        } else {
+            // Image is taller than window: scale width to fit, height overflows
+            dw = ww;
+            dh = ww / imgRatio;
+        }
+        
+        // Apply the dynamic zoom factor
+        const zoom = parseFloat(settings.z.value);
+        dw = dw * zoom;
+        dh = dh * zoom;
+        
+        // Retrieve X and Y offsets
+        const offsetX = parseFloat(settings.x.value);
+        const offsetY = parseFloat(settings.y.value);
+        
+        // Center the scaled image inside the window, applying user offsets
+        const dx = wx + (ww - dw) / 2 + offsetX;
+        const dy = wy + (wh - dh) / 2 + offsetY;
+        
+        ctx.drawImage(img, dx, dy, dw, dh);
+        
+        ctx.restore();
+    }
+    
+    // 3. Fit the front image into the top window
+    drawRoundedWindowAndImage(smartFrontImg, windowX, window1Y, windowWidth, windowHeight, cornerRadius, smartSettings.front);
+    
+    // 4. Fit the back image into the bottom window
+    drawRoundedWindowAndImage(smartBackImg, windowX, window2Y, windowWidth, windowHeight, cornerRadius, smartSettings.back);
+
+    // Update Preview UI immediately
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCanvas.width = A4_WIDTH / 4;
+    previewCanvas.height = A4_HEIGHT / 4;
+    previewCtx.drawImage(renderCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+}
+
 async function optimizeAndGenerateBlob(quiet = false) {
     if (!quiet) {
         statusText.innerText = 'Optimizing Image Size (Target 800KB - 1MB)...';
@@ -331,9 +568,18 @@ downloadBtn.addEventListener('click', () => {
 });
 
 function resetUI() {
-    dropZone.style.display = 'block';
+    if (currentMode === 'online') {
+        dropZoneOnline.style.display = 'block';
+        smartModeUpload.style.display = 'none';
+    } else {
+        dropZoneOnline.style.display = 'none';
+        smartModeUpload.style.display = 'flex';
+    }
+    
     statusContainer.style.display = 'none';
     controlsPanel.style.display = 'none';
+    smartControlsPanel.style.display = 'none';
     previewContainer.style.display = 'none';
+    actionPanel.style.display = 'none';
     emptyState.style.display = 'flex';
 }
