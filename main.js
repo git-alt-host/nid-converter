@@ -494,6 +494,23 @@ function drawSmartImages() {
         ctx.drawImage(img, dx, dy, dw, dh);
         
         ctx.restore();
+        
+        // Draw a thin border around the window
+        ctx.beginPath();
+        ctx.moveTo(wx + radius, wy);
+        ctx.lineTo(wx + ww - radius, wy);
+        ctx.quadraticCurveTo(wx + ww, wy, wx + ww, wy + radius);
+        ctx.lineTo(wx + ww, wy + wh - radius);
+        ctx.quadraticCurveTo(wx + ww, wy + wh, wx + ww - radius, wy + wh);
+        ctx.lineTo(wx + radius, wy + wh);
+        ctx.quadraticCurveTo(wx, wy + wh, wx, wy + wh - radius);
+        ctx.lineTo(wx, wy + radius);
+        ctx.quadraticCurveTo(wx, wy, wx + radius, wy);
+        ctx.closePath();
+        
+        ctx.lineWidth = 4; // Thin border
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
     }
     
     // 3. Fit the front image into the top window
